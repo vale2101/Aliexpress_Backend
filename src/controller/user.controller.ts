@@ -35,7 +35,15 @@ export async function loginUser(req: Request, res: Response): Promise<Response> 
       { expiresIn: "1h" }
     );
 
-    return res.status(HttpStatusCode.Ok).json({ token });
+    // ✅ Guardar token en cookie
+    res.cookie("token", token, {
+      httpOnly: true, // evita acceso desde JS del cliente
+      secure: process.env.NODE_ENV === "production", // solo HTTPS en producción
+      sameSite: "strict", // protege contra CSRF
+      maxAge: 3600000, // 1 hora en ms
+    });
+
+    return res.status(HttpStatusCode.Ok).json({ message: "Login exitoso" });
   } catch (error) {
     console.error(error);
     return res.status(HttpStatusCode.InternalServerError).json({ message: "Error en el servidor" });
@@ -96,8 +104,22 @@ export async function createUser(req: Request, res: Response): Promise<Response>
 // 🔹 PUT update
 export async function updateUser(req: Request, res: Response): Promise<Response> {
   try {
+    // 🔹 Obtener token de la cookie
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(401).json({ message: "No hay token" });
+    }
+
+    // 🔹 Verificar token
+    const decoded: any = jwt.verify(token, secretKey);
+    console.log(decoded); // Aquí tendrás userId y userRol
+
+    // 🔹 Continuar con la actualización
     const { id } = req.params;
     const { nombre, apellido, email, contrasena, telefono, rol, estado } = req.body;
+
+    // Encriptar contraseña si se envía
     const encryptedPass = contrasena ? bcrypt.hashSync(contrasena, 10) : undefined;
 
     const success = await updateUser_put({
@@ -112,12 +134,14 @@ export async function updateUser(req: Request, res: Response): Promise<Response>
     });
 
     if (!success) {
-      return res.status(HttpStatusCode.BadRequest).json({ message: "No se pudo actualizar el usuario" });
+      return res.status(400).json({ message: "No se pudo actualizar el usuario" });
     }
-    return res.status(HttpStatusCode.Ok).json({ message: "Usuario actualizado correctamente" });
+
+    return res.status(200).json({ message: "Usuario actualizado correctamente" });
+
   } catch (error) {
     console.error(error);
-    return res.status(HttpStatusCode.InternalServerError).json({ message: "Error en el servidor" });
+    return res.status(500).json({ message: "Error en el servidor" });
   }
 }
 

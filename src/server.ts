@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import routesRols from "./routes/rol.routes";
 import userRoutes from "./routes/user.routes";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 class Server {
   private app: Application;
@@ -24,14 +25,17 @@ class Server {
     // Parseo del body
     this.app.use(express.json());
 
-        // Cors
-        this.app.use(cors());
-    }
+    // Cors
+    this.app.use(cors());
 
-    routes() {
-        this.app.use('/api/rol', routesRols); 
-        this.app.use('/api/user', userRoutes); 
-    }
+    // ✅ Cookie parser
+    this.app.use(cookieParser());
+  }
+
+  routes() {
+    this.app.use('/api/rol', routesRols); 
+    this.app.use('/api/user', userRoutes); 
+  }
 }
 
 export default Server;
