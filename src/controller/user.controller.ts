@@ -35,10 +35,9 @@ export async function loginUser(req: Request, res: Response): Promise<Response> 
       { expiresIn: "1h" }
     );
 
-    // ✅ Guardar token en cookie
     res.cookie("token", token, {
-      httpOnly: true, // evita acceso desde JS del cliente
-      secure: process.env.NODE_ENV === "production", // solo HTTPS en producción
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production", 
       sameSite: "strict", // protege contra CSRF
       maxAge: 3600000, // 1 hora en ms
     });
@@ -104,22 +103,18 @@ export async function createUser(req: Request, res: Response): Promise<Response>
 // 🔹 PUT update
 export async function updateUser(req: Request, res: Response): Promise<Response> {
   try {
-    // 🔹 Obtener token de la cookie
     const token = req.cookies.token;
 
     if (!token) {
       return res.status(401).json({ message: "No hay token" });
     }
 
-    // 🔹 Verificar token
     const decoded: any = jwt.verify(token, secretKey);
-    console.log(decoded); // Aquí tendrás userId y userRol
+    console.log(decoded); 
 
-    // 🔹 Continuar con la actualización
     const { id } = req.params;
     const { nombre, apellido, email, contrasena, telefono, rol, estado } = req.body;
 
-    // Encriptar contraseña si se envía
     const encryptedPass = contrasena ? bcrypt.hashSync(contrasena, 10) : undefined;
 
     const success = await updateUser_put({
